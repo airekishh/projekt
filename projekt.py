@@ -6,18 +6,21 @@ from datetime import datetime
 class OverBudgetException(Exception):
     pass
 
+
 class PaymentStrategy:
     def pay(self, amount):
         pass
 
+
 class CreditCardPayment(PaymentStrategy):
     def pay(self, amount):
-        print(f"Płacę {amount} zł kartą")
+        print(f"Płacę {amount} zł kartą kredytową")
 
 
 class CashPayment(PaymentStrategy):
     def pay(self, amount):
         print(f"Płacę {amount} zł gotówką")
+
 
 
 class Transport:
@@ -40,6 +43,7 @@ class Flight(Transport):
         return 2
 
 
+# ✅ Enkapsulacja
 class Hotel:
     def __init__(self, name, price):
         self.__price = price
@@ -53,6 +57,8 @@ class Hotel:
             raise ValueError("Cena nie może być ujemna")
         self.__price = price
 
+
+# ✅ Klasa z wieloma konstruktorami
 class Trip:
     def __init__(self, destination, budget):
         self.destination = destination
@@ -90,6 +96,7 @@ class Trip:
         return trip
 
 
+# ✅ Polecenie
 class Command:
     def execute(self):
         pass
@@ -104,6 +111,7 @@ class AddHotelCommand(Command):
         self.trip.hotel = self.hotel
 
 
+# ✅ Template Method
 class TripBuilderTemplate:
     def build_trip(self):
         self.choose_destination()
@@ -120,16 +128,17 @@ class TripBuilderTemplate:
     def confirm_trip(self): raise NotImplementedError
 
 
+# GUI + konkretna implementacja
 class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
     def __init__(self):
         super().__init__()
         self.trips_history = []
-        self.load_trips_from_file()
+        self.load_trips_from_file()  # <<<< DODAJ TO TUTAJ
         self.title("Travel Planner")
         self.geometry("400x500")
 
         self.trip = None
-        self.trips_history = []
+        self.trips_history = []  # Lista zaplanowanych lotów
 
         self.selected_payment = tk.StringVar()
         self.destination = tk.StringVar()
@@ -201,16 +210,19 @@ class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
         cancel_button = tk.Button(cancel_window, text="Odwołaj wybrany lot", command=confirm_cancel)
         cancel_button.grid(row=2, column=0, columnspan=2, pady=10)
 
+        # Ustawienia siatki, żeby okno się prawidłowo skalowało
         cancel_window.grid_rowconfigure(1, weight=1)
         cancel_window.grid_columnconfigure(0, weight=1)
         cancel_window.grid_columnconfigure(1, weight=1)
 
     def create_widgets(self):
+        # Kontener do centrowania formularza
         form_frame = ttk.Frame(self)
-        form_frame.place(relx=0.5, rely=0.5, anchor="center")
+        form_frame.place(relx=0.5, rely=0.5, anchor="center")  # <<<<<< CENTROWANIE W PIONIE I POZIOMIE
 
         ttk.Label(form_frame, text="Miejsce docelowe:").pack(pady=5)
-        ttk.Combobox(form_frame, textvariable=self.destination, values=["Paryż", "Rzym", "Londyn"], state="readonly").pack()
+        ttk.Combobox(form_frame, textvariable=self.destination, values=["Paryż", "Rzym", "Londyn"],
+                     state="readonly").pack()
 
         ttk.Label(form_frame, text="Data wylotu (YYYY-MM-DD):").pack(pady=5)
         ttk.Entry(form_frame, textvariable=self.departure).pack()
@@ -219,17 +231,21 @@ class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
         ttk.Entry(form_frame, textvariable=self.return_date).pack()
 
         ttk.Label(form_frame, text="Miejsce w samolocie:").pack(pady=5)
-        ttk.Combobox(form_frame, textvariable=self.seat, values=["Okno", "Środek", "Przejście"], state="readonly").pack()
+        ttk.Combobox(form_frame, textvariable=self.seat, values=["Okno", "Środek", "Przejście"],
+                     state="readonly").pack()
 
         ttk.Label(form_frame, text="Hotel:").pack(pady=5)
-        ttk.Combobox(form_frame, textvariable=self.hotel_choice, values=["Hotel A", "Hotel B", "Hotel C"], state="readonly").pack()
+        ttk.Combobox(form_frame, textvariable=self.hotel_choice, values=["Hotel A", "Hotel B", "Hotel C"],
+                     state="readonly").pack()
 
         ttk.Label(form_frame, text="Metoda płatności:").pack(pady=5)
-        ttk.Combobox(form_frame, textvariable=self.selected_payment, values=["Karta", "Gotówka"], state="readonly").pack()
+        ttk.Combobox(form_frame, textvariable=self.selected_payment, values=["Karta", "Gotówka"],
+                     state="readonly").pack()
 
         ttk.Button(form_frame, text="Zaplanuj podróż", command=self.build_trip).pack(pady=20)
 
     def choose_destination(self):
+        # Walidacja pustych pól
         if not self.destination.get():
             messagebox.showerror("Błąd", "Wybierz miejsce docelowe.")
             raise ValueError("Brak miejsca docelowego.")
@@ -250,6 +266,7 @@ class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
             messagebox.showerror("Błąd", "Wybierz metodę płatności.")
             raise ValueError("Brak metody płatności.")
 
+        # Walidacja formatu dat
         departure_str = self.departure.get()
         return_str = self.return_date.get()
 
@@ -282,7 +299,7 @@ class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
             payment = CreditCardPayment() if self.selected_payment.get() == "Karta" else CashPayment()
             payment.pay(self.trip.total_cost())
             self.trips_history.append(self.trip)
-            self.save_trips_to_file()
+            self.save_trips_to_file()  # <<<< DODAJ TO TUTAJ
             messagebox.showinfo("Sukces", "Podróż zaplanowana pomyślnie!")
             self.clear_form()
         except OverBudgetException as e:
@@ -309,6 +326,12 @@ class TravelPlannerApp(tk.Tk, TripBuilderTemplate):
                     self.trips_history.append(trip)
         except FileNotFoundError:
             pass
+
+    def delete_last_trip_from_file(self):
+        if not self.trips_history:
+            return
+        self.trips_history.pop()
+        self.save_trips_to_file()
 
 
 if __name__ == "__main__":
